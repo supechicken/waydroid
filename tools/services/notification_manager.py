@@ -12,7 +12,6 @@ stopping = False
 bus_signals = []
 
 def start(args, session):
-    waydroid_data = session["waydroid_data"]
 
     def onListenerDeath(listener):
         listeners.remove(listener)
@@ -63,7 +62,7 @@ def start(args, session):
         pending_tokens[int(notification_id)] = str(token)
 
     def onActionInvoked(notification_id, action_id):
-        token = pending_tokens.pop(int(notification_id))
+        token = pending_tokens.pop(int(notification_id), "")
         for listener in listeners:
             listener.onActionInvoked(int(notification_id), str(action_id), str(token))
 

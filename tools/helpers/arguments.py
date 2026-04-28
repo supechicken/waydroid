@@ -122,6 +122,7 @@ def arguments_shell(subparser):
 
 def arguments_logcat(subparser):
     ret = subparser.add_parser("logcat", help="show android logcat")
+    ret.add_argument('ARGS', nargs='*', help="arguments to pass to logcat")
     return ret
 
 def arguments_adb(subparser):
@@ -133,6 +134,7 @@ def arguments_adb(subparser):
 
 def arguments_bugreport(subparser):
     ret = subparser.add_parser("bugreport", help="create a bugreport archive interactively")
+    return ret
 
 def arguments():
     parser = argparse.ArgumentParser(prog="waydroid")

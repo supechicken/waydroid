@@ -34,12 +34,12 @@ def service(args, looper):
     bus.add_signal_receiver(lambda: handle_disconnect(args, looper),
                             signal_name='Disconnected',
                             dbus_interface='org.freedesktop.DBus.Local')
-    dbus_obj = DbusSessionManager(looper, dbus.SessionBus(), '/SessionManager', args)
+    _session_manager = DbusSessionManager(looper, dbus.SessionBus(), '/SessionManager', args)
     looper.run()
 
 def start(args, unlocked_cb=None, background=True):
     try:
-        name = dbus.service.BusName("id.waydro.Session", dbus.SessionBus(), do_not_queue=True)
+        _name = dbus.service.BusName("id.waydro.Session", dbus.SessionBus(), do_not_queue=True)
     except dbus.exceptions.NameExistsException:
         logging.error("Session is already running")
         if unlocked_cb:
@@ -59,7 +59,7 @@ def start(args, unlocked_cb=None, background=True):
     else:
         xdg_runtime_dir = session["xdg_runtime_dir"]
         if xdg_runtime_dir == "None" or not xdg_runtime_dir:
-            logging.error(f"XDG_RUNTIME_DIR is not set; please don't start a Waydroid session with 'sudo'!")
+            logging.error("XDG_RUNTIME_DIR is not set; please don't start a Waydroid session with 'sudo'!")
             sys.exit(1)
         wayland_socket_path = os.path.join(xdg_runtime_dir, wayland_display)
     if not os.path.exists(wayland_socket_path):

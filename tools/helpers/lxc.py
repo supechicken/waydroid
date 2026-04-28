@@ -13,6 +13,8 @@ import platform
 import gbinder
 import tools.config
 import tools.helpers.run
+from contextlib import suppress
+from pathlib import Path
 
 def get_lxc_version(args):
     if shutil.which("lxc-info") is not None:
@@ -134,7 +136,7 @@ def get_apparmor_status(args):
     try:
         with open("/sys/kernel/security/apparmor/profiles", "r") as f:
             enabled &= (LXC_APPARMOR_PROFILE in f.read())
-    except:
+    except Exception:
         enabled = False
     return enabled
 
@@ -170,15 +172,13 @@ def set_lxc_config(args):
 
     nodes = generate_nodes_lxc_config(args)
     config_nodes_tmp_path = args.work + "/config_nodes"
-    config_nodes = open(config_nodes_tmp_path, "w")
-    for node in nodes:
-        config_nodes.write(node + "\n")
-    config_nodes.close()
+    with open(config_nodes_tmp_path, "w") as f:
+        f.writelines(node + "\n" for node in nodes)
     command = ["mv", config_nodes_tmp_path, lxc_path]
     tools.helpers.run.user(args, command)
 
     # Create empty file
-    open(os.path.join(lxc_path, "config_session"), mode="w").close()
+    Path(os.path.join(lxc_path, "config_session")).touch()
 
 def generate_session_lxc_config(args, session):
     nodes = []
@@ -211,10 +211,8 @@ def generate_session_lxc_config(args, session):
 
     lxc_path = tools.config.defaults["lxc"] + "/waydroid"
     config_nodes_tmp_path = args.work + "/config_session"
-    config_nodes = open(config_nodes_tmp_path, "w")
-    for node in nodes:
-        config_nodes.write(node + "\n")
-    config_nodes.close()
+    with open(config_nodes_tmp_path, "w") as f:
+        f.writelines(node + "\n" for node in nodes)
     command = ["mv", config_nodes_tmp_path, lxc_path]
     tools.helpers.run.user(args, command)
 
@@ -242,7 +240,7 @@ def make_base_props(args):
         try:
             sm = gbinder.ServiceManager("/dev/hwbinder")
             return intf in sm.list_sync()
-        except:
+        except Exception:
             return False
 
     props = []
@@ -347,10 +345,8 @@ def make_base_props(args):
                 props.pop(idx)
         props.append(k+"="+v)
 
-    base_props = open(args.work + "/waydroid_base.prop", "w")
-    for prop in props:
-        base_props.write(prop + "\n")
-    base_props.close()
+    with open(args.work + "/waydroid_base.prop", "w") as f:
+        f.writelines(prop + "\n" for prop in props)
 
 
 def setup_host_perms(args):
@@ -385,7 +381,7 @@ def status(args):
     command = ["lxc-info", "-P", tools.config.defaults["lxc"], "-n", "waydroid", "-sH"]
     try:
         return tools.helpers.run.user(args, command, output_return=True).strip()
-    except:
+    except Exception:
         logging.info("Couldn't get LXC status. Assuming STOPPED.")
         return "STOPPED"
 
@@ -407,10 +403,8 @@ def start(args):
     tools.helpers.run.user(args, command, output="background")
     wait_for_running(args)
     # Workaround lxc-start changing stdout/stderr permissions to 700
-    try:
+    with suppress(OSError):
         os.chmod(args.log, 0o666)
-    except:
-        pass
 
 def stop(args):
     command = ["lxc-stop", "-P",
@@ -445,7 +439,7 @@ def android_env_attach_options(args):
                "-n", "waydroid", "--clear-env", "--",
                "/system/bin/cat" ,"/data/system/environ/classpath"]
     allowed = ["CLASSPATH", "SYSTEMSERVER"]
-    try:
+    with suppress(Exception):
         p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         out, _ = p.communicate()
         if p.returncode == 0:
@@ -453,8 +447,6 @@ def android_env_attach_options(args):
                 _, k, v = line.split(' ', 2)
                 if any(pattern in k for pattern in allowed):
                     local_env[k] = v
-    except:
-        pass
     env = [k + "=" + v for k, v in local_env.items()]
     return [x for var in env for x in ("--set-var", var)]
 
@@ -468,11 +460,11 @@ def shell(args):
     command = ["lxc-attach", "-P", tools.config.defaults["lxc"],
                "-n", "waydroid", "--clear-env"]
     command.extend(android_env_attach_options(args))
-    if args.uid!=None:
+    if args.uid is not None:
         command.append("--uid="+str(args.uid))
-    if args.gid!=None:
+    if args.gid is not None:
         command.append("--gid="+str(args.gid))
-    elif args.uid!=None:
+    elif args.uid is not None:
         command.append("--gid="+str(args.uid))
     if args.nolsm or args.allcaps or args.nocgroup:
         elevatedprivs = "--elevated-privileges="
@@ -493,7 +485,7 @@ def shell(args):
             elevatedprivs+="CGROUP"
             addpipe = True
         command.append(elevatedprivs)
-    if args.context!=None and not args.nolsm:
+    if args.context is not None and not args.nolsm:
         command.append("--context="+args.context)
     command.append("--")
     if args.COMMAND:
@@ -519,6 +511,8 @@ def shell(args):
 
 def logcat(args):
     args.COMMAND = ["/system/bin/logcat"]
+    if args.ARGS:
+        args.COMMAND.extend(args.ARGS)
     args.uid = None
     args.gid = None
     args.nolsm = None

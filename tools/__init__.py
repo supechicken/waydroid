@@ -14,6 +14,13 @@ from . import config
 from . import helpers
 from .helpers import logging as tools_logging
 
+def prep_args(args):
+    args.cache = {}
+    args.work = config.defaults["work"]
+    args.config = args.work + "/waydroid.cfg"
+    args.log = args.work + "/waydroid.log"
+    args.sudo_timer = True
+    args.timeout = 1800
 
 def main():
     def actionNeedRoot(action):
@@ -26,12 +33,7 @@ def main():
     try:
         # Parse arguments, set up logging
         args = helpers.arguments()
-        args.cache = {}
-        args.work = config.defaults["work"]
-        args.config = args.work + "/waydroid.cfg"
-        args.log = args.work + "/waydroid.log"
-        args.sudo_timer = True
-        args.timeout = 1800
+        prep_args(args)
 
         if os.geteuid() == 0:
             if not os.path.exists(args.work):

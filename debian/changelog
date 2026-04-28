@@ -1,3 +1,15 @@
+waydroid (1.6.2) bullseye; urgency=medium
+
+  * gpu: add support for xe kernel driver
+  * session_manager: Catch only GLib.GError exceptions
+  * user_manager: Use pathlib module for handling paths
+  * user_manager: Fix desktop file update logic for headless apps
+  * interfaces: Remove unneeded semicolons from line ends
+  * logcat: Add support for passing arguments
+  * initializer: Further avoid multiprocessing spawn errors
+
+ -- Alessandro Astone <ales.astone@gmail.com>  Sun, 22 Feb 2026 11:50:34 +0100
+
 waydroid (1.6.1) bullseye; urgency=medium
 
   * Also consider block device files when checking for preinstalled images (#2136)

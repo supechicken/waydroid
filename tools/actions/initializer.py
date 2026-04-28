@@ -13,6 +13,7 @@ import queue
 import time
 import dbus
 import dbus.service
+import argparse
 from gi.repository import GLib
 
 def is_initialized(args):
@@ -254,13 +255,18 @@ def remote_init_proc_entry(args, pipe):
         sys.exit(0)
     except KeyboardInterrupt:
         sys.exit(1)
-    except Exception as e:
+    except Exception:
         logging.exception("Exception during init")
         sys.exit(1)
     finally:
         pipe.close()
 
-def remote_init_server(args, dbus_obj, params):
+def remote_init_server(_args, dbus_obj, params):
+    args = argparse.Namespace()
+    tools.prep_args(args)
+    args.details_to_stdout = _args.details_to_stdout
+    args.verbose = _args.verbose
+    args.quiet = _args.quiet
     args.force = True
     args.images_path = ""
     args.rom_type = ""
@@ -413,8 +419,8 @@ def remote_init_client(args):
             if self.initializing:
                 try:
                     tools.helpers.ipc.DBusContainerService("/Initializer", "id.waydro.Initializer").Cancel()
-                except:
-                    pass
+                except Exception as e:
+                    logging.debug("Unexpected error while cancelling initializer: %s", e)
             Gtk.main_quit()
 
         def run_init(self, systemOta, vendorOta, systemType):

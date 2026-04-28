@@ -64,7 +64,7 @@ def maybeLaunchLater(args, launchNow):
         tools.helpers.ipc.DBusSessionService()
         try:
             tools.helpers.ipc.DBusContainerService().Unfreeze()
-        except:
+        except Exception:
             logging.error("Failed to unfreeze container. Trying to launch anyways...")
         launchNow()
     except dbus.DBusException:
@@ -76,7 +76,7 @@ def launch(args):
         platformService = IPlatform.get_service(args)
         if platformService:
             platformService.setprop("waydroid.active_apps", args.PACKAGE)
-            ret = platformService.launchApp(args.PACKAGE)
+            platformService.launchApp(args.PACKAGE)
             multiwin = platformService.getprop(
                 "persist.waydroid.multi_windows", "false")
             if multiwin == "false":
